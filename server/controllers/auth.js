@@ -78,7 +78,7 @@ const SignUp = async (req, res) => {
     await transaction.rollback();
     return res.status(500).json({
       success: false,
-      message: "Error in Sign up API",
+      message: "ERROR: " + err.message
     });
   }
 };
@@ -130,9 +130,10 @@ const Login = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
-      maxAge: 1000 * 60 * 60
+       maxAge: 1000 * 60 * 60 * 24 * 7 
     });
     console.log("token is:", token);
+    await transaction.commit();
     return res.status(200).json({
       success: true,
       message: "Login Successfully",
@@ -146,13 +147,28 @@ const Login = async (req, res) => {
     await transaction.rollback();
     return res.status(500).json({
       success: false,
-      message: "Error in Login API",
+      message: "ERROR: " + err.message
     });
   }
 };
 const Logout = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
-  } catch (err) { }
+    res.cookie("token", null, {
+      expires: new Date(Date.now())
+    });
+    await transaction.commit();
+    res.json({
+      success: true,
+      message: "User logout successfully"
+    });
+  } catch (err) {
+    await transaction.rollback();
+    return res.status(500), json({
+      success: false,
+      message: "ERROR: " + err.message
+    })
+  }
 };
 
 module.exports = {
